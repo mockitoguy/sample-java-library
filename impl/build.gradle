@@ -1,6 +1,25 @@
 plugins {
     id 'java-library'
     id 'maven-publish'
+    id 'idea'
+}
+
+configurations {
+    testUtil
+}
+
+sourceSets {
+    testUtil {
+        compileClasspath += configurations.testCompile
+        java {
+            srcDirs = ['src/testUtil/java']
+        }
+    }
+
+    test {
+        compileClasspath += sourceSets.testUtil.output
+        runtimeClasspath += sourceSets.testUtil.output
+    }
 }
 
 dependencies {
@@ -9,4 +28,21 @@ dependencies {
     implementation 'com.google.guava:guava:23.0'
 
     testImplementation 'junit:junit:4.12'
+}
+
+task testUtilJar(type: Jar) {
+    from sourceSets.testUtil.output
+    classifier 'testUtil'
+}
+
+artifacts {
+    testUtil testUtilJar
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifact tasks.testUtilJar
+        }
+    }
 }
