@@ -6,10 +6,19 @@ plugins {
 
 configurations {
     testUtil
+    dataModel
 }
 
 sourceSets {
+    dataModel {
+        //to demonstrate a publication with a separate pom file
+        java {
+            srcDirs = ['src/dataModel/java']
+        }
+    }
+
     testUtil {
+        //to demonstrate a publication with a classifier
         compileClasspath += configurations.testCompile
         java {
             srcDirs = ['src/testUtil/java']
@@ -35,6 +44,11 @@ task testUtilJar(type: Jar) {
     classifier 'testUtil'
 }
 
+task dataModelJar(type: Jar) {
+    from sourceSets.dataModel.output
+    baseName 'impl-data-model'
+}
+
 artifacts {
     testUtil testUtilJar
 }
@@ -42,7 +56,22 @@ artifacts {
 publishing {
     publications {
         mavenJava(MavenPublication) {
+            // 'mavenJava' is preconfigured with Shipkit plugin,
+            // we just need to add an extra artifact that has a different classifier
             artifact tasks.testUtilJar
         }
+
+        dataModel(MavenPublication) {
+            from components.java //ensures that the dependencies are included in the generated pom file
+            artifactId 'impl-data-model'
+            artifacts = [artifact(tasks.dataModelJar)] //overwrites the default artifact
+        }
+    }
+}
+
+idea {
+    module {
+        sourceDirs += file('src/dataModel/java')
+        sourceDirs += file('src/testUtil/java')
     }
 }
