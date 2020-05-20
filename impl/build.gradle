@@ -55,18 +55,52 @@ artifacts {
 
 publishing {
     publications {
-        mavenJava(MavenPublication) {
-            // 'mavenJava' is preconfigured with Shipkit plugin,
+        javaLibrary {
+            // this publication is preconfigured with Shipkit plugin,
             // we just need to add an extra artifact that has a different classifier
             artifact tasks.testUtilJar
         }
 
         dataModel(MavenPublication) {
-            from components.java //ensures that the dependencies are included in the generated pom file
             artifactId 'impl-data-model'
-            artifacts = [artifact(tasks.dataModelJar)] //overwrites the default artifact
+            artifact tasks.dataModelJar
+
+            //pom xml workaround needed because of: https://github.com/gradle/gradle/issues/1061
+            pom.withXml {
+                def node = asNode().appendNode('dependencies')
+                def used = new HashSet()
+                def addDependency = { group, artifact, ver, scope ->
+                    if (used.add("$group:$name:$ver")) {
+                        def n = node.appendNode('dependency')
+                        n.appendNode('groupId', group)
+                        n.appendNode('artifactId', artifact)
+                        n.appendNode('version', ver)
+                        n.appendNode('scope', scope)
+                    }
+                }
+
+                //based on: https://docs.gradle.org/current/userguide/java_library_plugin.html#sec:java_library_separation
+                def scopes = [
+                    provided: ['compileOnly'],
+                    compile: ['runtimeOnly', 'api'],
+                    runtime: ['implementation'],
+                    test: ['testCompileOnly', 'testImplementation', 'testRuntimeOnly'],
+                ]
+
+                scopes.each { scope, configs ->
+                    configs.each { conf ->
+                        project.configurations[conf].allDependencies.each {
+                            addDependency(it.group, it.name, it.version, scope)
+                        }
+                    }
+                }
+            }
         }
     }
+}
+
+bintray {
+    publications += ['dataModel']
 }
 
 idea {

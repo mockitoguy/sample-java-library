@@ -9,4 +9,4 @@
 
 rootProject.name = 'sample-java-library'
 
-include "api", "impl"
+include "api", "impl", "util"
