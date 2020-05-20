@@ -17,7 +17,8 @@ allprojects {
            key = System.getenv("BINTRAY_API_KEY")
 
            pkg {
-               repo = 'samples'
+               userOrg = 'linkedin'
+               repo = 'maven'
                user = 'szczepiq'
                name = 'sample-java-library'
                licenses = ['Apache-2.0']
